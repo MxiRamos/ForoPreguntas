@@ -12,7 +12,7 @@ const answerSchema = new mongoose.Schema({
     },
     question: {
         type: mongoose.Schema.Types.ObjectId,
-        red: 'Question',
+        ref: 'Question',
         required: true
     },
     votes: {
