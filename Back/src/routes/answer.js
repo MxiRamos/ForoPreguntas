@@ -36,7 +36,7 @@ router.get('/respuesta', tokenVerification, async(req, res) => {
 router.get('/respuesta/:id', tokenVerification, async(req, res) => {
     try{
         const { id } = req.params
-        const respuesta = await questionSchema.findById(id)
+        const respuesta = await answerSchema.findById(id)
         res.json(respuesta)
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener la respuesta'})

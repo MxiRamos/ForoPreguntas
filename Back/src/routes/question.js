@@ -2,6 +2,7 @@ const express = require('express')
 const questionSchema = require('../models/questions')
 const user = require('../models/user')
 const jwt = require('jsonwebtoken')
+const answerSchema = require('../models/answer')
 const router = express.Router()
 
 // Middleware para verificar token
@@ -41,6 +42,19 @@ router.get('/pregunta/:id', tokenVerification, async(req,res) => {
         res.json(pregunta)
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener la tarea'})
+    }
+})
+
+router.get('/preguntaRespuesta/:questionId', tokenVerification, async(req,res) => {
+    try{
+        const { questionId } = req.params
+        
+        const respuestas = await answerSchema.find({ question: questionId })
+
+        res.status(200).json(respuestas)
+    } catch(error) {
+        console.log(error)
+        res.status(500).json({ error: 'Error al obtener las respuestas' })
     }
 })
 
