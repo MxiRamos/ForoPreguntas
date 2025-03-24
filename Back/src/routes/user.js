@@ -29,6 +29,17 @@ router.get('/usuarios', async(req, res) => {
     }
 })
 
+//Obtener usuario
+router.get('/usuario/:id', async(req, res) => {
+    try{
+        const { id } = req.params
+        const usuario = await usuarioSchema.findById(id)
+        res.json(usuario)
+    } catch(error){
+        res.json({ error: 'Usuario no encontrado'})
+    }
+})
+
 //Obtener el Usuario mediante el token
 router.get('/usuario', tokenVerification, async(req, res) => {
     try {

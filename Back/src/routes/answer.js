@@ -23,6 +23,16 @@ const tokenVerification = (req, res, next) => {
 }
 
 //Obtener respuestas
+router.get('/respuesta', async(req, res) => {
+    try {
+        const respuesta = await answerSchema.find().populate('user', 'user')
+        res.json(respuesta)
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener las respuestas' })
+    }
+})
+
+//Obtener respuestas por usuario
 router.get('/respuesta', tokenVerification, async(req, res) => {
     try {
         const respuesta = await answerSchema.find({ user: req.user.id })
@@ -32,8 +42,21 @@ router.get('/respuesta', tokenVerification, async(req, res) => {
     }
 })
 
+/*
 //Obtener respuesta
 router.get('/respuesta/:id', tokenVerification, async(req, res) => {
+    try{
+        const { id } = req.params
+        const respuesta = await answerSchema.findById(id)
+        res.json(respuesta)
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener la respuesta'})
+    }
+})
+*/
+
+//Obtener respuesta sin token
+router.get('/respuesta/:id', async(req, res) => {
     try{
         const { id } = req.params
         const respuesta = await answerSchema.findById(id)
@@ -73,6 +96,23 @@ router.delete('/respuesta/:id', tokenVerification, async(req, res) => {
     }
 })
 
+// Actualizar Respuesta sin token
+router.put('/respuesta/:id', tokenVerification, async(req, res) => {
+    try{
+        const { id } = req.params
+        const { body } = req.body
+
+        const respuestaActualizada = await answerSchema.updateOne(
+            { _id: id },
+            { body: body }
+        )
+        res.status(200).json(respuestaActualizada)
+    }catch(error) {
+        res.status(500).json({error: 'Error al actualizar la respuesta'})
+    }
+})
+
+/*
 // Actualizar Respuesta
 router.put('/respuesta/:id', tokenVerification, async(req, res) => {
     try{
@@ -86,6 +126,43 @@ router.put('/respuesta/:id', tokenVerification, async(req, res) => {
         res.status(200).json(respuestaActualizada)
     }catch(error) {
         res.status(500).json({error: 'Error al actualizar la respuesta'})
+    }
+})
+*/
+
+// Aumentar voto
+router.put('/respuestaVoteup/:id', tokenVerification, async(req, res) => {
+    try{
+        const {id} = req.params
+        const votoActualizado = await answerSchema.updateOne(
+            { _id: id },
+            {
+                $inc: { votes:1 }
+            }
+        )
+
+        res.status(200).json({ message: 'Voto incrementado'})
+    } catch(error) {
+        console.log('Error al incrementar el voto: ', error)
+        res.status(500).json({ message: 'Error interno del servidor'})
+    }
+})
+
+// Disminuir voto
+router.put('/respuestaVotedown/:id', tokenVerification, async(req, res) => {
+    try{
+        const {id} = req.params
+        const votoActualizado = await answerSchema.updateOne(
+            { _id: id },
+            {
+                $inc: { votes: -1 }
+            }
+        )
+
+        res.status(200).json({ message: 'Voto incrementado'})
+    } catch(error) {
+        console.log('Error al incrementar el voto: ', error)
+        res.status(500).json({ message: 'Error interno del servidor'})
     }
 })
 

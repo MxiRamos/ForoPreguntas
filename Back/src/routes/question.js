@@ -22,9 +22,27 @@ const tokenVerification = (req, res, next) => {
     }
 }
 
-
-
 //Obtener preguntas
+router.get('/preguntas', async(req, res) => {
+    try{
+        const filter = req.query.tag ? { tags: req.query.tag } : {} //filtra por tag EJ: URL?tag=javascript
+        const preguntas = await questionSchema.find(filter).populate('user', 'user').lean()
+
+        // cuenta las respuesta de la pregunta
+        const preguntaRespuestas = await Promise.all(
+            preguntas.map(async (pregunta) => {
+                const respuestaCount = await answerSchema.countDocuments({ question: pregunta._id })
+                return { ...pregunta, respuestaCount }
+            })
+        )
+
+        res.json(preguntaRespuestas)
+    } catch(error){
+        res.status(500).json({ error: 'Error al obtener las tareas' })
+    }
+})
+
+//Obtener preguntas por usuario
 router.get('/pregunta', tokenVerification, async(req, res) => {
     try{
         const preguntas = await questionSchema.find({ user: req.user.id })
@@ -35,6 +53,18 @@ router.get('/pregunta', tokenVerification, async(req, res) => {
 })
 
 //Obtener pregunta
+router.get('/pregunta/:id', async(req,res) => {
+    try{
+        const { id } = req.params
+        const pregunta = await questionSchema.findById(id)
+        res.json(pregunta)
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener la tarea'})
+    }
+})
+
+
+//Obtener pregunta por usuario
 router.get('/pregunta/:id', tokenVerification, async(req,res) => {
     try{
         const { id } = req.params
@@ -45,6 +75,21 @@ router.get('/pregunta/:id', tokenVerification, async(req,res) => {
     }
 })
 
+//Obtener respuestas de la pregunta
+router.get('/preguntaRespuesta/:questionId', async(req,res) => {
+    try{
+        const { questionId } = req.params
+        
+        const respuestas = await answerSchema.find({ question: questionId }).populate('user', 'user')
+
+        res.status(200).json(respuestas)
+    } catch(error) {
+        console.log(error)
+        res.status(500).json({ error: 'Error al obtener las respuestas' })
+    }
+})
+
+//Obtener respuestas de la pregunta por usuario
 router.get('/preguntaRespuesta/:questionId', tokenVerification, async(req,res) => {
     try{
         const { questionId } = req.params
@@ -105,6 +150,54 @@ router.put('/pregunta/:id', tokenVerification, async(req, res) => {
         res.status(200).json(preguntaActualizada)
     }catch(error) {
         res.status(500).json({error: 'Error al actualizar la pregunta'})
+    }
+})
+
+// Aumentar voto
+router.put('/preguntaVoteup/:id', tokenVerification, async(req, res) => {
+    try{
+        const {id} = req.params
+        const votoActualizado = await questionSchema.updateOne(
+            { _id: id },
+            {
+                $inc: { votes:1 }
+            }
+        )
+
+        res.status(200).json({ message: 'Voto incrementado'})
+    } catch(error) {
+        console.log('Error al incrementar el voto: ', error)
+        res.status(500).json({ message: 'Error interno del servidor'})
+    }
+})
+
+// Disminuir voto
+router.put('/preguntaVotedown/:id', tokenVerification, async(req, res) => {
+    try{
+        const {id} = req.params
+        const votoActualizado = await questionSchema.updateOne(
+            { _id: id },
+            {
+                $inc: { votes: -1 }
+            }
+        )
+
+        res.status(200).json({ message: 'Voto incrementado'})
+    } catch(error) {
+        console.log('Error al incrementar el voto: ', error)
+        res.status(500).json({ message: 'Error interno del servidor'})
+    }
+})
+
+// Filtrar preguntas por Tags
+router.get('/tags', async (req, res) => {
+    try{
+        const questions = await questionSchema.find({}, 'tags') // obtengo los tags
+        const allTags = questions.flatMap(q => q.tags) // une los arrays
+        const uniqueTags = [...new Set(allTags)]
+        res.json(uniqueTags)
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener los tags', error})
     }
 })
 

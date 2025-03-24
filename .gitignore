@@ -4,8 +4,8 @@
 Back/.env
 
 # dependencies
-Front/node_modules
-Front/build
+Front/foro-preguntas/node_modules
+Front/foro-preguntas/build
 Back/node_modules
 /.pnp
 .pnp.js
