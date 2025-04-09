@@ -2,7 +2,6 @@ import { Link } from "react-router-dom"
 import NavBar from "./Navbar"
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { jwtDecode } from "jwt-decode"
 
 function Login() {
   const [usuario, setUsuario] = useState("")

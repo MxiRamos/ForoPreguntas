@@ -9,6 +9,7 @@ function AskQuestion(){
   const [body, setBody] = useState("")
   const [tags, setTags] = useState([])
   const token = JSON.parse(localStorage.getItem('token'))
+  const user = localStorage.getItem('usuario')
   const availableTags = [
     "JavaScript", "Python", "Java", "C++", "C#", "PHP", "Swift", 
     "Ruby", "TypeScript", "Go", "Kotlin", "Rust", "Dart", "Scala"
@@ -26,27 +27,30 @@ function AskQuestion(){
   }
 
   const realizarPregunta = () => {
-    if(tags === ""){
-      alert("Seleccione un tag")
+    if(user){
+      if(tags === ""){
+        alert("Seleccione un tag")
+      }else{
+        axios.post('/api/pregunta', {
+          title: title,
+          body: body,
+          tags: tags
+        },
+          {headers: {
+            Authorization: token
+          }}
+        )
+          .then(res => {
+            console.log(res.data)
+            window.location.href='/'
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      }
     }else{
-      axios.post('/api/pregunta', {
-        title: title,
-        body: body,
-        tags: tags
-      },
-        {headers: {
-          Authorization: token
-        }}
-      )
-        .then(res => {
-          console.log(res.data)
-          window.location.href='/'
-        })
-        .catch(err => {
-          console.log(err)
-        })
+      alert("Debe iniciar sesion para relizar una pregunta")
     }
-    
   }
 
   return(

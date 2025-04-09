@@ -10,6 +10,9 @@ import AnswerEdit from './components/AnswerEdit';
 import AskQuestion from './components/AskQuestion';
 import Login from './components/Login';
 import Register from './components/Register';
+import User from './components/User';
+import NavBar from './components/Navbar';
+import UpdatePassword from './components/UpdatePassword';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
         <Route path='/preguntar' element={<AskQuestion/>}/>
         <Route path='/login' element={<Login/>}/>
         <Route path='/registrar' element={<Register/>}/>
+        <Route path='/usuario/:id' element={<User/>}/>
+        <Route path='/update-password/:id' element={<UpdatePassword/>}/>
+        {/*<Route path='/navbar' element={<NavBar/>}/>*/}
       </Routes>
     </BrowserRouter>
   );

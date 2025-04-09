@@ -1,9 +1,13 @@
-import React, { useEffect } from "react"
+import axios from "axios"
+import React, { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
 function NavBar(){
 
-  const token = localStorage.getItem('token')
+  const token = JSON.parse(localStorage.getItem('token'))
+  const usuario = localStorage.getItem('usuario')
+  const navigate = useNavigate()
+  const [user, setUser] = useState([])
 
   useEffect(() => {
 
@@ -14,8 +18,20 @@ function NavBar(){
 
   }, [token])
 
-  const usuario = localStorage.getItem('usuario')
-  const navigate = useNavigate()
+  useEffect(() => {
+    axios.get('/api/usuario', {
+      headers: {
+        'Authorization': token
+      }
+    })
+    .then(res => {
+      //console.log(res.data)
+      setUser(res.data)
+    })
+    .catch(err => {
+      console.log(err)
+    })
+  },[])
 
   const cerrarSesion = () => {
     localStorage.removeItem('token')
@@ -23,13 +39,12 @@ function NavBar(){
     navigate('/')
   }
 
-
-
   return(
     <nav className="navbar">
       {usuario ? (
         <div>
-          <p>{usuario}</p>
+          <img src={user.profile} height="32" width="32"></img>
+          <p onClick={() => navigate(`/usuario/${user._id}`)}>{usuario}</p>
           <button className="btn btn-primary" onClick={cerrarSesion}>Cerrar sesion</button>
         </div>
       ):(

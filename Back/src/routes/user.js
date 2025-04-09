@@ -3,6 +3,9 @@ const usuarioSchema = require('../models/user')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const router = express.Router()
+const cloudinary = require('cloudinary').v2
+const multer = require("multer")
+const upload = multer({ dest: "uploads/" })
 
 //Middleware para verificar token
 const tokenVerification = (req, res, next) => {
@@ -18,6 +21,12 @@ const tokenVerification = (req, res, next) => {
         res.status(400).json({ error: 'Token no valido' })
     }
 }
+
+cloudinary.config({
+    cloud_name: 'dwajt7axt',
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+})
 
 //Obtener usuarios
 router.get('/usuarios', async(req, res) => {
@@ -92,20 +101,35 @@ router.delete('/usuario/:id', tokenVerification, async(req, res) => {
 })
 
 //Actualizar usuario
-router.put('/usuario/:id', tokenVerification, async(req,res) => {
+router.put('/usuario/:id', tokenVerification, upload.single("profile"), async(req,res) => {
     try {
         const { id } = req.params
-        const { user, email, password, confirmPassword } = req.body
+        const { user, email, password, confirmPassword} = req.body
 
         if(password !== confirmPassword){
             return res.status(400).json({ error: 'La confirmacion no coinciden' })
         }
+
+        const usuarioActual = await usuarioSchema.findById(id)
+        if(!usuarioActual) {
+            return res.status(404).json({ error: "Usuario no encontrado"})
+        }
+
+        if(req.file){
+            const uploadResult = await cloudinary.uploader.upload(req.file.path)
+            newProfileUrl = uploadResult.secure_url
+        }else{
+            newProfileUrl = usuarioActual.profile
+        }
+
+        //console.log(uploadResult.secure_url)
 
         const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined
 
         const updateData = {
             user,
             email,
+            profile: newProfileUrl,
             ...(hashedPassword && {password: hashedPassword})
         }
 
@@ -118,6 +142,75 @@ router.put('/usuario/:id', tokenVerification, async(req,res) => {
         res.status(500).json({ error: 'Error al actualizar el usuario' })
     }
 })
+
+router.patch('/usuario/:id/password', tokenVerification, async(req, res) => {
+    try{
+        const { currentPassword, newPassword, confirmPassword } = req.body
+        const id = req.params.id
+        const usuario = await usuarioSchema.findById(id)
+
+        const passwordCoincide = await bcrypt.compare(currentPassword, usuario.password)
+        if(!passwordCoincide){
+            return res.status(400).json({ error: 'Contaseña actual incorrecta' })
+        }
+
+        if(newPassword !== confirmPassword){
+            return res.status(400).json({ error: 'La confirmacion no coincide' })
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+        usuario.password = hashedPassword
+        await usuario.save()
+
+        res.json({ message: 'Contraseña actualizada' })
+    } catch(error) {
+        console.log(error)
+        res.status(500).json({ error: 'Error del servidor' })
+    }
+})
+
+/**
+ * router.put('/usuario/:id', tokenVerification, upload.single("profile"), async(req, res) => {
+    try {
+        const { id } = req.params;
+        const { user, email, password, confirmPassword } = req.body;
+
+        if (password && password !== confirmPassword) {
+            return res.status(400).json({ error: 'Las contraseñas no coinciden' });
+        }
+
+        const usuarioActual = await usuarioSchema.findById(id);
+        if (!usuarioActual) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        let newProfileUrl = usuarioActual.profile; // Si no hay nueva imagen, mantener la anterior
+
+        if (req.file) { // Si se subió un archivo, subirlo a Cloudinary
+            const uploadResult = await cloudinary.uploader.upload(req.file.path);
+            newProfileUrl = uploadResult.secure_url;
+        }
+
+        const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
+        const updateData = {
+            user,
+            email,
+            profile: newProfileUrl,
+            ...(hashedPassword && { password: hashedPassword })
+        };
+
+        await usuarioSchema.updateOne({ _id: id }, { $set: updateData });
+
+        res.status(200).json({ message: "Usuario actualizado correctamente" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al actualizar el usuario' });
+    }
+});
+
+ */
 
 //Iniciar sesion
 router.post('/login', async(req,res) => {
